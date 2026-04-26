@@ -43,11 +43,6 @@ tailwind.config = {darkMode: "class", theme: {extend: {colors: {surface: "#faf5e
     z-index: 1000; align-items: center; justify-content: center; padding: 16px;
   }
   #modal-overlay.open { display: flex; }
-  
-  /* Additional styles for login customization modal */
-  .login-config-field:focus {
-    ring: 2px solid #c2652a;
-  }
 </style>
 </head>
 <body class="bg-surface text-on-surface">
@@ -163,73 +158,6 @@ tailwind.config = {darkMode: "class", theme: {extend: {colors: {surface: "#faf5e
   </div>
 </div>
 
-<!-- ===== LOGIN CONFIGURATION MODAL (เพิ่มเติม) ===== -->
-<div id="login-config-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1001; align-items:center; justify-content:center; padding:16px;">
-  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8">
-    <div class="flex items-center justify-between mb-6">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
-          <span class="material-symbols-outlined text-primary">settings</span>
-        </div>
-        <h3 class="font-bold text-on-surface text-lg">ปรับแต่งระบบก่อนใช้งาน</h3>
-      </div>
-      <button onclick="closeLoginConfigModal()" class="p-2 hover:bg-surface-container rounded-lg transition-colors">
-        <span class="material-symbols-outlined text-outline">close</span>
-      </button>
-    </div>
-    <form id="login-config-form" class="space-y-5" onsubmit="applyLoginConfig(event)">
-      <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800 flex items-start gap-2">
-        <span class="material-symbols-outlined text-amber-600 text-sm">info</span>
-        <span>การตั้งค่านี้จะถูกบันทึกในเครื่องของคุณ คุณสามารถเปลี่ยนได้ภายหลังในหน้า Settings</span>
-      </div>
-      
-      <div>
-        <label class="block text-sm font-bold text-on-surface-variant mb-2">ชื่อผู้ใช้งานเริ่มต้น</label>
-        <input id="config-username" type="text" value="admin" placeholder="ชื่อผู้ใช้สำหรับเข้าระบบ"
-          class="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm"/>
-      </div>
-      
-      <div>
-        <label class="block text-sm font-bold text-on-surface-variant mb-2">รหัสผ่านเริ่มต้น</label>
-        <div class="relative">
-          <input id="config-password" type="password" value="password123" placeholder="ตั้งรหัสผ่าน"
-            class="w-full px-4 py-3 pr-12 bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm"/>
-          <button type="button" class="absolute right-4 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface transition-colors" onclick="toggleConfigPassword()">
-            <span class="material-symbols-outlined" id="config-pw-icon">visibility</span>
-          </button>
-        </div>
-      </div>
-      
-      <div>
-        <label class="block text-sm font-bold text-on-surface-variant mb-2">ชื่อที่แสดงในระบบ</label>
-        <input id="config-displayname" type="text" value="Lead Supervisor" placeholder="ชื่อที่จะแสดงบน Dashboard"
-          class="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm"/>
-      </div>
-      
-      <div>
-        <label class="block text-sm font-bold text-on-surface-variant mb-2">บทบาท</label>
-        <select id="config-role" class="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm">
-          <option value="Lead Supervisor">Lead Supervisor (หัวหน้านิเทศก์)</option>
-          <option value="Supervisor">Supervisor (ศึกษานิเทศก์)</option>
-          <option value="Administrator">Administrator (ผู้ดูแลระบบ)</option>
-          <option value="Viewer">Viewer (ผู้ดูรายงาน)</option>
-        </select>
-      </div>
-      
-      <div class="flex items-center gap-2">
-        <input type="checkbox" id="config-remember" checked class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary"/>
-        <label for="config-remember" class="text-sm text-on-surface-variant">จดจำการตั้งค่านี้</label>
-      </div>
-      
-      <div class="flex gap-3 pt-2">
-        <button type="button" onclick="resetLoginConfig()" class="flex-1 py-3 border border-outline-variant rounded-xl font-semibold text-on-surface-variant hover:bg-surface-container transition-colors text-sm">ค่าเริ่มต้น</button>
-        <button type="submit" class="flex-1 py-3 bg-primary text-on-primary rounded-xl font-bold text-sm hover:opacity-90 transition-opacity">บันทึกและเข้าสู่ระบบ</button>
-      </div>
-    </form>
-    <p class="text-[10px] text-center mt-4 text-outline">กด "ค่าเริ่มต้น" เพื่อคืนค่าผู้ใช้: admin / password123</p>
-  </div>
-</div>
-
 <!-- ===== PAGE: LOGIN ===== -->
 <div id="page-login" class="page active">
   <main class="flex-grow flex items-center justify-center p-4 md:p-8 relative overflow-hidden min-h-screen flex flex-col">
@@ -287,7 +215,7 @@ tailwind.config = {darkMode: "class", theme: {extend: {colors: {surface: "#faf5e
             <div>
               <div class="flex justify-between items-center mb-2">
                 <label class="block text-sm font-bold text-on-surface-variant" for="password">รหัสผ่าน</label>
-                <a class="text-sm font-bold text-primary hover:text-primary-container transition-colors cursor-pointer" onclick="showForgotPassword()">ลืมรหัสผ่าน?</a>
+                <a class="text-sm font-bold text-primary hover:text-primary-container transition-colors" href="#">ลืมรหัสผ่าน?</a>
               </div>
               <div class="relative group">
                 <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors">lock</span>
@@ -313,12 +241,8 @@ tailwind.config = {darkMode: "class", theme: {extend: {colors: {surface: "#faf5e
               <span class="material-symbols-outlined text-xl">login</span>
             </button>
           </form>
-          <div class="mt-6 pt-6 border-t border-outline-variant/30 text-center space-y-3">
-            <button onclick="openLoginConfigModal()" class="w-full py-2.5 border border-dashed border-outline-variant rounded-xl text-sm font-semibold text-primary hover:bg-surface-container transition-colors flex items-center justify-center gap-2">
-              <span class="material-symbols-outlined text-lg">settings</span>
-              แก้ไขข้อมูลก่อนเข้าสู่ระบบ
-            </button>
-            <p class="text-sm text-outline font-medium">มีปัญหาการเข้าสู่ระบบ? <a class="text-primary font-bold hover:underline cursor-pointer" onclick="showForgotPassword()">ติดต่อผู้ดูแลระบบ</a></p>
+          <div class="mt-10 pt-8 border-t border-outline-variant/30 text-center">
+            <p class="text-sm text-outline font-medium">มีปัญหาการเข้าสู่ระบบ? <a class="text-primary font-bold hover:underline" href="#">ติดต่อผู้ดูแลระบบ</a></p>
           </div>
         </div>
       </div>
@@ -332,9 +256,9 @@ tailwind.config = {darkMode: "class", theme: {extend: {colors: {surface: "#faf5e
       </div>
       <p class="text-xs text-outline font-medium">© 2024 Supervision Report System. สงวนลิขสิทธิ์ตามพระราชบัญญัติคอมพิวเตอร์</p>
       <div class="flex gap-6 mt-2">
-        <a class="text-xs text-outline font-semibold hover:text-primary transition-colors cursor-pointer">นโยบายความเป็นส่วนตัว</a>
-        <a class="text-xs text-outline font-semibold hover:text-primary transition-colors cursor-pointer">เงื่อนไขการใช้งาน</a>
-        <a class="text-xs text-outline font-semibold hover:text-primary transition-colors cursor-pointer">ความช่วยเหลือ</a>
+        <a class="text-xs text-outline font-semibold hover:text-primary transition-colors" href="#">นโยบายความเป็นส่วนตัว</a>
+        <a class="text-xs text-outline font-semibold hover:text-primary transition-colors" href="#">เงื่อนไขการใช้งาน</a>
+        <a class="text-xs text-outline font-semibold hover:text-primary transition-colors" href="#">ความช่วยเหลือ</a>
       </div>
     </div>
   </footer>
@@ -354,7 +278,7 @@ tailwind.config = {darkMode: "class", theme: {extend: {colors: {surface: "#faf5e
       <button onclick="openModal()" title="ตั้งค่า Google Sheets" class="hidden md:flex items-center gap-2 px-3 py-1.5 bg-surface-container rounded-xl text-xs font-bold text-on-surface-variant hover:bg-surface-container-high transition-colors">
         <span class="material-symbols-outlined text-sm">table_chart</span> Google Sheets
       </button>
-      <span class="hidden md:block font-semibold text-sm text-blue-800" id="display-name-header">Lead Supervisor</span>
+      <span class="hidden md:block font-semibold text-sm text-blue-800">Lead Supervisor</span>
       <div class="w-10 h-10 rounded-full bg-slate-200 border-2 border-primary overflow-hidden cursor-pointer" onclick="navigateTo('profile')">
         <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAJvtmCSUz6V3jtAmlCaY8711tmjKv7iNKEnXQq2E3h6FTgKX-BAve7qRfaDfOpqK-LHWv0Sp5FEtQVjxMRdiBohCRXIy8unBgpGSci97jKjmpfRchAT1_q45gkkx6_csaatKwmbZlOaeU5AmFNUn6ihthHZXxL0XKf7PZD3HDE3Zn7cYySWyJg11ptiQAUMrmFKsGhg-CIMVJZjwD32ilYTdHV-1rVw3F5QWk7S0ykPmygBIJFfpeqizbAhgiwOUty6uE1gEbb_mQ"/>
       </div>
@@ -386,10 +310,10 @@ tailwind.config = {darkMode: "class", theme: {extend: {colors: {surface: "#faf5e
         </div>
         <div class="mt-auto px-6 py-4 border-t border-slate-100">
           <div class="flex items-center gap-3">
-            <div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center font-bold text-xs text-on-primary" id="sidebar-initials">LS</div>
+            <div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center font-bold text-xs text-on-primary">LS</div>
             <div>
-              <p class="text-xs font-bold text-on-surface" id="sidebar-name">Lead Supervisor</p>
-              <p class="text-[10px] text-on-surface-variant" id="sidebar-role">หัวหน้านิเทศก์</p>
+              <p class="text-xs font-bold text-on-surface">Lead Supervisor</p>
+              <p class="text-[10px] text-on-surface-variant">ID: 99283</p>
             </div>
           </div>
         </div>
@@ -602,7 +526,7 @@ tailwind.config = {darkMode: "class", theme: {extend: {colors: {surface: "#faf5e
     </div>
     <div class="flex items-center gap-3">
       <div class="text-right hidden sm:block">
-        <p class="text-sm font-semibold text-blue-800" id="profile-header-name">ดร. สมชาย ใจดี</p>
+        <p class="text-sm font-semibold text-blue-800">ดร. สมชาย ใจดี</p>
         <p class="text-[10px] text-slate-500">Supervisor ID: 99283</p>
       </div>
       <div class="w-10 h-10 rounded-full bg-primary-container overflow-hidden border-2 border-primary-container">
@@ -614,7 +538,7 @@ tailwind.config = {darkMode: "class", theme: {extend: {colors: {surface: "#faf5e
     <!-- Sidebar -->
     <aside class="hidden md:block w-72 shrink-0">
       <nav class="bg-white h-[calc(100vh-8rem)] rounded-xl shadow-xl border-r border-slate-200 flex flex-col py-6 sticky top-24">
-        <div class="px-6 mb-8"><h2 class="text-blue-800 font-black text-lg" id="profile-sidebar-name">Lead Supervisor</h2><p class="text-slate-500 text-xs">Educational Agency</p></div>
+        <div class="px-6 mb-8"><h2 class="text-blue-800 font-black text-lg">Lead Supervisor</h2><p class="text-slate-500 text-xs">Educational Agency</p></div>
         <div class="flex flex-col gap-1">
           <div onclick="navigateTo('dashboard')" class="text-slate-600 mx-2 my-1 px-4 py-3 hover:bg-slate-100 transition-all flex items-center gap-3 cursor-pointer rounded-lg text-sm font-medium"><span class="material-symbols-outlined">home</span> Overview</div>
           <div class="text-slate-600 mx-2 my-1 px-4 py-3 hover:bg-slate-100 transition-all flex items-center gap-3 cursor-pointer rounded-lg text-sm font-medium"><span class="material-symbols-outlined">domain</span> School Directory</div>
@@ -635,8 +559,8 @@ tailwind.config = {darkMode: "class", theme: {extend: {colors: {surface: "#faf5e
           <div class="flex-1 text-center md:text-left z-10">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
               <div>
-                <h2 class="text-2xl font-bold text-slate-900" id="profile-fullname">ดร. สมชาย ใจดี</h2>
-                <p class="text-primary font-semibold" id="profile-role-display">ศึกษานิเทศก์ชำนาญการพิเศษ</p>
+                <h2 class="text-2xl font-bold text-slate-900">ดร. สมชาย ใจดี</h2>
+                <p class="text-primary font-semibold">ศึกษานิเทศก์ชำนาญการพิเศษ</p>
               </div>
               <button class="px-6 py-2.5 bg-primary text-white rounded-xl font-semibold text-sm hover:opacity-90 active:scale-95 transition-all shadow-md">แก้ไขข้อมูลส่วนตัว</button>
             </div>
@@ -670,7 +594,7 @@ tailwind.config = {darkMode: "class", theme: {extend: {colors: {surface: "#faf5e
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <div class="flex items-center justify-between mb-6">
             <div class="flex items-center gap-2"><span class="material-symbols-outlined text-primary">history</span><h3 class="font-bold text-slate-900">ประวัติการนิเทศล่าสุด</h3></div>
-            <a class="text-xs font-bold text-primary hover:underline cursor-pointer">ดูทั้งหมด</a>
+            <a class="text-xs font-bold text-primary hover:underline" href="#">ดูทั้งหมด</a>
           </div>
           <div class="space-y-3" id="profile-history">
             <div class="flex items-center gap-4 p-3 border-b border-slate-100"><div class="w-10 h-10 rounded bg-blue-50 flex items-center justify-center text-primary"><span class="material-symbols-outlined">school</span></div><div class="flex-1"><h4 class="text-sm font-bold text-slate-800">โรงเรียนอนุบาลวัดท่าซุง</h4><p class="text-[10px] text-slate-500">20 ต.ค. 2566 • การสอนคณิตศาสตร์</p></div><span class="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded">สำเร็จ</span></div>
@@ -708,7 +632,7 @@ tailwind.config = {darkMode: "class", theme: {extend: {colors: {surface: "#faf5e
         <img class="w-20 h-20 rounded-full border-4 border-white shadow-md" src="https://lh3.googleusercontent.com/aida-public/AB6AXuClYDob_OSDy37D2UGWTH0aGAbzVfxB0kaG22zq9JZOahcYYtEhrXwBWUSxmTRYdFUMmmGdYbdDo7vRXCG8wfPp9R0nRknzxFmk-83PkDYmK17Ho7ybp-VUKM7lz4sQBv4RqxXBJORxm32is-aJj76Ry9WA-BDOk8PYMK_-ds9d3zjIWlV02M5jBl7p_riPNcCkFoSi4xqtvzF8yNv2LEPhQaL8iu1XBNrMtJNjCuXacpAOHQs7Da7usBXFSZIzQgSCudi6OcdnMRo"/>
         <div class="absolute bottom-0 right-0 bg-primary p-1.5 rounded-full text-white border-2 border-white"><span class="material-symbols-outlined text-xs">edit</span></div>
       </div>
-      <h2 class="text-xl font-bold text-on-background" id="settings-username">Lead Supervisor</h2>
+      <h2 class="text-xl font-bold text-on-background">Lead Supervisor</h2>
       <p class="text-sm text-on-surface-variant">Educational Agency • ID: 99283</p>
     </section>
     <div class="space-y-6">
@@ -760,16 +684,6 @@ tailwind.config = {darkMode: "class", theme: {extend: {colors: {surface: "#faf5e
           </button>
         </div>
       </div>
-      <!-- Login Configuration -->
-      <div>
-        <h3 class="text-xs font-semibold text-primary uppercase tracking-wider mb-3 px-1">ปรับแต่งการเข้าสู่ระบบ</h3>
-        <div class="bg-surface-container-lowest border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-          <button onclick="openLoginConfigModal()" class="w-full flex items-center justify-between p-4 hover:bg-slate-50 active:bg-slate-100 transition-colors">
-            <div class="flex items-center gap-4"><span class="material-symbols-outlined text-slate-500">settings</span><span class="text-sm font-medium">แก้ไขข้อมูลผู้ใช้งาน</span></div>
-            <span class="material-symbols-outlined text-slate-400">chevron_right</span>
-          </button>
-        </div>
-      </div>
       <!-- Admin -->
       <div>
         <h3 class="text-xs font-semibold text-primary uppercase tracking-wider mb-3 px-1">Admin</h3>
@@ -801,3 +715,209 @@ tailwind.config = {darkMode: "class", theme: {extend: {colors: {surface: "#faf5e
 
 <!-- ===== JAVASCRIPT ===== -->
 <script>
+/*
+ * ============================================================
+ * GOOGLE APPS SCRIPT CODE (วางใน Apps Script Editor)
+ * ============================================================
+ * function doPost(e) {
+ *   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+ *   var data = JSON.parse(e.postData.contents);
+ *   
+ *   // สร้าง Header ถ้ายังไม่มี
+ *   if (sheet.getLastRow() === 0) {
+ *     sheet.appendRow(['Timestamp','School','Date','Supervisor','Topic','Status','Score','Note']);
+ *   }
+ *   
+ *   sheet.appendRow([
+ *     new Date().toLocaleString('th-TH'),
+ *     data.school,
+ *     data.date,
+ *     data.supervisor,
+ *     data.topic,
+ *     data.status,
+ *     data.score,
+ *     data.note
+ *   ]);
+ *   
+ *   return ContentService
+ *     .createTextOutput(JSON.stringify({success: true}))
+ *     .setMimeType(ContentService.MimeType.JSON);
+ * }
+ * ============================================================
+ */
+
+// ---- State ----
+let currentPage = 'login';
+let sheetsUrl = localStorage.getItem('sheetsUrl') || '';
+let localReports = JSON.parse(localStorage.getItem('localReports') || '[]');
+
+// ---- Navigation ----
+function navigateTo(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  currentPage = page;
+  window.scrollTo(0, 0);
+}
+
+// ---- Login ----
+function handleLogin(e) {
+  e.preventDefault();
+  const btn = document.getElementById('login-btn');
+  btn.innerHTML = '<span class="spinner"></span> กำลังเข้าสู่ระบบ...';
+  btn.disabled = true;
+  setTimeout(() => {
+    navigateTo('dashboard');
+    showToast('เข้าสู่ระบบสำเร็จ ยินดีต้อนรับ!');
+    btn.innerHTML = '<span>เข้าสู่ระบบ</span><span class="material-symbols-outlined text-xl">login</span>';
+    btn.disabled = false;
+  }, 1200);
+}
+
+function handleLogout() {
+  navigateTo('login');
+  showToast('ออกจากระบบแล้ว');
+}
+
+function togglePassword() {
+  const pw = document.getElementById('password');
+  const icon = document.getElementById('pw-icon');
+  if (pw.type === 'password') { pw.type = 'text'; icon.textContent = 'visibility_off'; }
+  else { pw.type = 'password'; icon.textContent = 'visibility'; }
+}
+
+// ---- Google Sheets Modal ----
+function openModal() {
+  document.getElementById('modal-overlay').classList.add('open');
+  document.getElementById('sheets-url-input').value = sheetsUrl;
+}
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+function saveSheetUrl() {
+  const url = document.getElementById('sheets-url-input').value.trim();
+  if (url && !url.startsWith('https://script.google.com')) {
+    showToast('URL ไม่ถูกต้อง กรุณาใช้ Google Apps Script URL');
+    return;
+  }
+  sheetsUrl = url;
+  localStorage.setItem('sheetsUrl', url);
+  updateSheetsStatus();
+  closeModal();
+  showToast(url ? 'เชื่อมต่อ Google Sheets สำเร็จ ✓' : 'ลบ URL แล้ว');
+}
+function updateSheetsStatus() {
+  const el = document.getElementById('sheets-status-text');
+  if (el) el.textContent = sheetsUrl ? 'เชื่อมต่อแล้ว: ' + sheetsUrl.substring(0,40) + '...' : 'ยังไม่ได้เชื่อมต่อ';
+}
+
+// ---- Report Modal ----
+function openReportModal() {
+  const overlay = document.getElementById('report-modal-overlay');
+  overlay.style.display = 'flex';
+  // Set today as default date
+  document.getElementById('field-date').value = new Date().toISOString().split('T')[0];
+  // Show warning if no sheets URL
+  const warn = document.getElementById('sheets-warning');
+  if (!sheetsUrl) warn.classList.remove('hidden');
+  else warn.classList.add('hidden');
+}
+function closeReportModal() {
+  document.getElementById('report-modal-overlay').style.display = 'none';
+  document.getElementById('report-form').reset();
+}
+
+// ---- Submit Report ----
+document.getElementById('report-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById('submit-btn');
+  btn.innerHTML = '<span class="spinner"></span> กำลังบันทึก...';
+  btn.disabled = true;
+
+  const report = {
+    school: document.getElementById('field-school').value,
+    date: document.getElementById('field-date').value,
+    supervisor: document.getElementById('field-supervisor').value,
+    topic: document.getElementById('field-topic').value,
+    status: document.getElementById('field-status').value,
+    score: document.getElementById('field-score').value,
+    note: document.getElementById('field-note').value,
+    timestamp: new Date().toISOString()
+  };
+
+  // Save locally
+  localReports.unshift(report);
+  localStorage.setItem('localReports', JSON.stringify(localReports));
+  addReportToTable(report);
+
+  // Send to Google Sheets
+  if (sheetsUrl) {
+    try {
+      await fetch(sheetsUrl, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(report)
+      });
+      showToast('บันทึกลง Google Sheets สำเร็จ ✓');
+    } catch (err) {
+      showToast('บันทึกในเครื่องแล้ว (ส่ง Sheets ไม่สำเร็จ)');
+    }
+  } else {
+    showToast('บันทึกในเครื่องสำเร็จ (ยังไม่ได้เชื่อมต่อ Sheets)');
+  }
+
+  btn.innerHTML = '<span class="material-symbols-outlined text-sm">save</span> บันทึกรายงาน';
+  btn.disabled = false;
+  closeReportModal();
+});
+
+// ---- Add Report Row to Table ----
+function addReportToTable(report) {
+  const tbody = document.getElementById('reports-table-body');
+  const statusColor = report.status === 'สำเร็จ' ? 'bg-emerald-100 text-emerald-800' :
+                      report.status === 'รอการอนุมัติ' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800';
+  const tr = document.createElement('tr');
+  tr.className = 'hover:bg-slate-50 transition-colors';
+  tr.innerHTML = `
+    <td class="px-6 py-4"><p class="text-sm font-bold text-slate-800">${report.school}</p><p class="text-xs text-slate-500">${report.topic}</p></td>
+    <td class="px-6 py-4 text-sm text-slate-600">${formatDate(report.date)}</td>
+    <td class="px-6 py-4"><span class="text-sm text-slate-700">${report.supervisor}</span></td>
+    <td class="px-6 py-4"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor}">${report.status}</span></td>
+    <td class="px-6 py-4 text-right"><button class="p-1 hover:bg-slate-200 rounded-lg text-slate-400"><span class="material-symbols-outlined text-lg">more_vert</span></button></td>
+  `;
+  tbody.insertBefore(tr, tbody.firstChild);
+}
+
+function formatDate(dateStr) {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+// ---- Toast ----
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// ---- Sidebar toggle (mobile) ----
+function toggleSidebar() {
+  // For future mobile drawer implementation
+}
+
+// ---- Close modals on overlay click ----
+document.getElementById('modal-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+document.getElementById('report-modal-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeReportModal();
+});
+
+// ---- Init ----
+updateSheetsStatus();
+// Load saved reports into table on start
+localReports.slice(0, 5).forEach(r => addReportToTable(r));
+</script>
+</body>
+</html>
