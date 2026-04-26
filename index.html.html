@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="th" class="light">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Supervision System</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Eb+Garamond:wght@400;500;700&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config = {darkMode: "class", theme: {extend: {colors: {surface: "#faf5ee", "surface-bright": "#faf5ee", "surface-container": "#f2ece4", "surface-container-high": "#ece6dc", "inverse-surface": "#3a302a", outline: "#9a9088", "on-secondary": "#ffffff", "on-background": "#3a302a", secondary: "#78706a", "tertiary-container": "#d47070", "on-secondary-fixed": "#2a2420", "on-primary-fixed-variant": "#8a4518", tertiary: "#8c3c3c", "error-container": "#fce4e0", "on-surface": "#3a302a", "secondary-fixed": "#eae2da", "secondary-fixed-dim": "#cec6be", "surface-tint": "#c2652a", "on-error-container": "#7a1a10", "on-primary-container": "#fbe8d8", "on-tertiary-fixed": "#2e1515", "inverse-on-surface": "#faf5ee", "on-primary": "#ffffff", "surface-container-low": "#f6f0e8", "on-tertiary": "#ffffff", primary: "#c2652a", "surface-container-lowest": "#ffffff", "surface-container-highest": "#e6e0d6", "secondary-container": "#eae2da", "primary-container": "#e08850", "on-error": "#ffffff", "outline-variant": "#d8d0c8", "on-tertiary-container": "#3a2020", "on-secondary-fixed-variant": "#504840", "tertiary-fixed-dim": "#e8a0a0", background: "#faf5ee", "primary-fixed-dim": "#f0a878", "primary-fixed": "#fbe8d8", "on-tertiary-fixed-variant": "#6e3030", "on-surface-variant": "#605850", "on-primary-fixed": "#401a08", "tertiary-fixed": "#fce0e0", "surface-dim": "#dcd6cc", "on-secondary-container": "#605850", "inverse-primary": "#f0a878", error: "#c0392b", "surface-variant": "#ece6dc"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}, fontFamily: {headline: ["Eb Garamond"], display: ["Eb Garamond"], body: ["Manrope"], label: ["Manrope"]}, fontSize: {}}}};
+</script>
+<style>
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+  body { font-family: 'Manrope', sans-serif; min-height: max(884px, 100dvh); }
+
+  /* Page transitions */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* Toast notification */
+  #toast {
+    position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: #3a302a; color: #faf5ee; padding: 12px 24px; border-radius: 999px;
+    font-size: 14px; font-weight: 600; opacity: 0; transition: all 0.3s ease;
+    z-index: 9999; white-space: nowrap; pointer-events: none;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Loading spinner */
+  .spinner {
+    width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite;
+    display: inline-block; margin-right: 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Modal overlay */
+  #modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    z-index: 1000; align-items: center; justify-content: center; padding: 16px;
+  }
+  #modal-overlay.open { display: flex; }
+</style>
+</head>
+<body class="bg-surface text-on-surface">
+
+<!-- ===== TOAST ===== -->
+<div id="toast"></div>
+
+<!-- ===== GOOGLE SHEETS CONFIG MODAL ===== -->
+<div id="modal-overlay">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8">
+    <div class="flex items-center gap-3 mb-6">
+      <div class="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+        <span class="material-symbols-outlined text-primary">table_chart</span>
+      </div>
+      <div>
+        <h3 class="font-bold text-on-surface text-lg">เชื่อมต่อ Google Sheets</h3>
+        <p class="text-xs text-on-surface-variant">กรอก URL ของ Google Apps Script Web App</p>
+      </div>
+    </div>
+    <div class="space-y-4">
+      <div>
+        <label class="block text-sm font-bold text-on-surface-variant mb-2">Google Apps Script URL</label>
+        <input id="sheets-url-input" type="url" placeholder="https://script.google.com/macros/s/.../exec"
+          class="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm font-medium placeholder:text-outline/60"/>
+      </div>
+      <div class="bg-surface-container rounded-xl p-4 text-xs text-on-surface-variant space-y-2">
+        <p class="font-bold text-on-surface">วิธีตั้งค่า Google Apps Script:</p>
+        <ol class="list-decimal ml-4 space-y-1 leading-relaxed">
+          <li>เปิด Google Sheets แล้วไปที่ Extensions → Apps Script</li>
+          <li>วางโค้ด doPost(e) สำหรับรับข้อมูล</li>
+          <li>Deploy เป็น Web App (Execute as: Me, Who has access: Anyone)</li>
+          <li>คัดลอก URL แล้วนำมาวางด้านบน</li>
+        </ol>
+      </div>
+      <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800">
+        <span class="font-bold">หมายเหตุ:</span> ตัวอย่าง Apps Script โค้ดที่ต้องใช้อยู่ในความคิดเห็นของไฟล์นี้
+      </div>
+    </div>
+    <div class="flex gap-3 mt-6">
+      <button onclick="closeModal()" class="flex-1 py-3 border border-outline-variant rounded-xl font-semibold text-on-surface-variant hover:bg-surface-container transition-colors text-sm">ยกเลิก</button>
+      <button onclick="saveSheetUrl()" class="flex-1 py-3 bg-primary text-on-primary rounded-xl font-bold text-sm hover:opacity-90 transition-opacity">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ADD REPORT MODAL ===== -->
+<div id="report-modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center; padding:16px;">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-8 max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-6">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+          <span class="material-symbols-outlined text-primary">assignment_add</span>
+        </div>
+        <h3 class="font-bold text-on-surface text-lg">เพิ่มรายงานการนิเทศ</h3>
+      </div>
+      <button onclick="closeReportModal()" class="p-2 hover:bg-surface-container rounded-lg transition-colors">
+        <span class="material-symbols-outlined text-outline">close</span>
+      </button>
+    </div>
+    <form id="report-form" class="space-y-4">
+      <div class="grid grid-cols-2 gap-4">
+        <div class="col-span-2">
+          <label class="block text-sm font-bold text-on-surface-variant mb-2">ชื่อโรงเรียน *</label>
+          <input id="field-school" type="text" placeholder="กรอกชื่อโรงเรียน" required
+            class="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm placeholder:text-outline/60"/>
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-on-surface-variant mb-2">วันที่นิเทศ *</label>
+          <input id="field-date" type="date" required
+            class="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm"/>
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-on-surface-variant mb-2">ผู้นิเทศ *</label>
+          <input id="field-supervisor" type="text" placeholder="ชื่อผู้นิเทศ" required
+            class="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm placeholder:text-outline/60"/>
+        </div>
+        <div class="col-span-2">
+          <label class="block text-sm font-bold text-on-surface-variant mb-2">หัวข้อการนิเทศ *</label>
+          <input id="field-topic" type="text" placeholder="เช่น การสอนคณิตศาสตร์, การใช้สื่อเทคโนโลยี" required
+            class="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm placeholder:text-outline/60"/>
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-on-surface-variant mb-2">สถานะ</label>
+          <select id="field-status"
+            class="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm">
+            <option value="สำเร็จ">สำเร็จ</option>
+            <option value="รอการอนุมัติ">รอการอนุมัติ</option>
+            <option value="ร่าง">ร่าง</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-on-surface-variant mb-2">คะแนนประเมิน (0-100)</label>
+          <input id="field-score" type="number" min="0" max="100" placeholder="85"
+            class="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm placeholder:text-outline/60"/>
+        </div>
+        <div class="col-span-2">
+          <label class="block text-sm font-bold text-on-surface-variant mb-2">หมายเหตุ / ข้อเสนอแนะ</label>
+          <textarea id="field-note" rows="3" placeholder="กรอกข้อสังเกตหรือข้อเสนอแนะเพิ่มเติม"
+            class="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm placeholder:text-outline/60 resize-none"></textarea>
+        </div>
+      </div>
+      <div id="sheets-warning" class="hidden bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800">
+        <span class="font-bold">ยังไม่ได้เชื่อมต่อ Google Sheets</span> — ข้อมูลจะถูกบันทึกเฉพาะในเครื่องเท่านั้น
+        <button type="button" onclick="closeReportModal();openModal()" class="ml-2 underline font-bold">ตั้งค่าเลย</button>
+      </div>
+      <div class="flex gap-3 pt-2">
+        <button type="button" onclick="closeReportModal()" class="flex-1 py-3 border border-outline-variant rounded-xl font-semibold text-on-surface-variant hover:bg-surface-container transition-colors text-sm">ยกเลิก</button>
+        <button type="submit" id="submit-btn" class="flex-1 py-3 bg-primary text-on-primary rounded-xl font-bold text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+          <span class="material-symbols-outlined text-sm">save</span> บันทึกรายงาน
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ===== PAGE: LOGIN ===== -->
+<div id="page-login" class="page active">
+  <main class="flex-grow flex items-center justify-center p-4 md:p-8 relative overflow-hidden min-h-screen flex flex-col">
+    <div class="absolute top-0 left-0 w-full h-full -z-10 opacity-30 pointer-events-none">
+      <div class="absolute -top-24 -right-24 w-96 h-96 bg-primary-fixed rounded-full blur-3xl"></div>
+      <div class="absolute -bottom-24 -left-24 w-96 h-96 bg-secondary-fixed rounded-full blur-3xl"></div>
+    </div>
+    <div class="w-full max-w-[1200px] grid md:grid-cols-2 gap-0 bg-surface-container-lowest rounded-[2rem] overflow-hidden shadow-2xl border border-outline-variant/30 my-auto">
+      <!-- Left Branding -->
+      <div class="hidden md:flex flex-col justify-between p-12 bg-primary relative overflow-hidden text-on-primary">
+        <div class="absolute inset-0 opacity-10">
+          <div class="absolute inset-0" style="background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0); background-size: 32px 32px;"></div>
+        </div>
+        <div class="relative z-10">
+          <div class="flex items-center gap-3 mb-8">
+            <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center">
+              <span class="material-symbols-outlined text-primary text-3xl">school</span>
+            </div>
+            <span class="text-xl font-extrabold tracking-tight">Supervision System</span>
+          </div>
+          <h1 class="text-5xl font-black leading-tight mb-6">ยกระดับคุณภาพ<br/>การศึกษาไทย<br/>ด้วยการนิเทศมืออาชีพ</h1>
+          <p class="text-primary-fixed/80 text-lg max-w-sm font-medium">เข้าถึงข้อมูล รายงาน และการติดตามผลการจัดการเรียนรู้อย่างเป็นระบบและมีประสิทธิภาพ</p>
+        </div>
+        <div class="relative z-10 mt-12 bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20">
+          <div class="flex items-center gap-4">
+            <img alt="User Profile" class="w-12 h-12 rounded-full object-cover border-2 border-white/30" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBmq8Cm8Dso1tfg8mejllO8dhjX4IXzPKyB42t89SjqMsGL42AJrmZsD6vLp9iO_X0KIlJKTK_0iDMqSHEgMQBTJywm_8UA7pkDDnpJkegBVYSakyrX7B0Vv03qbgxDuwXMDxb1uGagmIML5sN9yJZkWB62uSVWwvsLvgDv4tUzp2OPIIenPMTQHhm1IIvMar0jvnbwodoIPb0Lgiiv5J_1X9YXLFQdPGJxUBBW3lqhDE9W23suFNYJJs9aupySOXR33ihEsdjve1w"/>
+            <div>
+              <p class="text-sm font-bold">นิเทศก์ต้นแบบปี 2567</p>
+              <p class="text-xs text-primary-fixed/70">"ระบบช่วยให้การสรุปรายงานรวดเร็วขึ้นถึง 70%"</p>
+            </div>
+          </div>
+        </div>
+        <div class="absolute -bottom-16 -right-16 w-64 h-64 bg-primary-container rounded-full opacity-50 blur-2xl"></div>
+      </div>
+      <!-- Right Login Form -->
+      <div class="p-8 md:p-16 flex flex-col justify-center">
+        <div class="max-w-md w-full mx-auto">
+          <div class="flex md:hidden justify-center mb-8">
+            <div class="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center shadow-lg">
+              <span class="material-symbols-outlined text-on-primary text-4xl">school</span>
+            </div>
+          </div>
+          <div class="mb-10 text-center md:text-left">
+            <h2 class="text-3xl font-black text-on-surface mb-2 tracking-tight">เข้าสู่ระบบ</h2>
+            <p class="text-on-surface-variant font-medium">ระบบรายงานผลการนิเทศ</p>
+          </div>
+          <form id="login-form" class="space-y-6" onsubmit="handleLogin(event)">
+            <div>
+              <label class="block text-sm font-bold text-on-surface-variant mb-2" for="username">ชื่อผู้ใช้งาน</label>
+              <div class="relative group">
+                <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors">person</span>
+                <input class="w-full pl-12 pr-4 py-3.5 bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder:text-outline/60 font-medium" id="username" placeholder="กรอกชื่อผู้ใช้งาน หรืออีเมล" type="text"/>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <label class="block text-sm font-bold text-on-surface-variant" for="password">รหัสผ่าน</label>
+                <a class="text-sm font-bold text-primary hover:text-primary-container transition-colors" href="#">ลืมรหัสผ่าน?</a>
+              </div>
+              <div class="relative group">
+                <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors">lock</span>
+                <input class="w-full pl-12 pr-12 py-3.5 bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder:text-outline/60 font-medium" id="password" placeholder="••••••••" type="password"/>
+                <button class="absolute right-4 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface transition-colors" type="button" onclick="togglePassword()">
+                  <span class="material-symbols-outlined" id="pw-icon">visibility</span>
+                </button>
+              </div>
+            </div>
+            <div class="flex items-center">
+              <label class="flex items-center cursor-pointer group">
+                <div class="relative">
+                  <input class="sr-only peer" type="checkbox" id="remember"/>
+                  <div class="w-5 h-5 border-2 border-outline-variant rounded-md peer-checked:bg-primary peer-checked:border-primary transition-all flex items-center justify-center">
+                    <span class="material-symbols-outlined text-white text-base scale-0 peer-checked:scale-100 transition-transform" style="font-variation-settings: 'wght' 700;">check</span>
+                  </div>
+                </div>
+                <span class="ml-3 text-sm font-semibold text-on-surface-variant group-hover:text-on-surface transition-colors">จดจำการเข้าสู่ระบบ</span>
+              </label>
+            </div>
+            <button class="w-full bg-primary text-on-primary py-4 rounded-xl font-bold text-lg shadow-xl shadow-primary/20 hover:bg-primary-container active:scale-[0.98] transition-all flex items-center justify-center gap-2" type="submit" id="login-btn">
+              <span>เข้าสู่ระบบ</span>
+              <span class="material-symbols-outlined text-xl">login</span>
+            </button>
+          </form>
+          <div class="mt-10 pt-8 border-t border-outline-variant/30 text-center">
+            <p class="text-sm text-outline font-medium">มีปัญหาการเข้าสู่ระบบ? <a class="text-primary font-bold hover:underline" href="#">ติดต่อผู้ดูแลระบบ</a></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer class="py-8 px-4 text-center">
+    <div class="max-w-screen-xl mx-auto flex flex-col items-center gap-4">
+      <div class="flex items-center gap-2 text-on-surface-variant">
+        <span class="material-symbols-outlined text-primary/60">account_balance</span>
+        <span class="text-sm font-bold tracking-tight">สำนักงานเขตพื้นที่การศึกษาประถมศึกษา (สพป.)</span>
+      </div>
+      <p class="text-xs text-outline font-medium">© 2024 Supervision Report System. สงวนลิขสิทธิ์ตามพระราชบัญญัติคอมพิวเตอร์</p>
+      <div class="flex gap-6 mt-2">
+        <a class="text-xs text-outline font-semibold hover:text-primary transition-colors" href="#">นโยบายความเป็นส่วนตัว</a>
+        <a class="text-xs text-outline font-semibold hover:text-primary transition-colors" href="#">เงื่อนไขการใช้งาน</a>
+        <a class="text-xs text-outline font-semibold hover:text-primary transition-colors" href="#">ความช่วยเหลือ</a>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<!-- ===== PAGE: DASHBOARD ===== -->
+<div id="page-dashboard" class="page">
+  <!-- TopAppBar -->
+  <header class="bg-white border-b border-slate-200 shadow-sm top-0 z-50 flex justify-between items-center w-full px-4 h-16 fixed">
+    <div class="flex items-center gap-3">
+      <button class="p-2 hover:bg-slate-50 transition-colors" onclick="toggleSidebar()">
+        <span class="material-symbols-outlined text-blue-800">menu</span>
+      </button>
+      <h1 class="text-xl font-bold text-blue-800 tracking-tight">Supervision System</h1>
+    </div>
+    <div class="flex items-center gap-4">
+      <button onclick="openModal()" title="ตั้งค่า Google Sheets" class="hidden md:flex items-center gap-2 px-3 py-1.5 bg-surface-container rounded-xl text-xs font-bold text-on-surface-variant hover:bg-surface-container-high transition-colors">
+        <span class="material-symbols-outlined text-sm">table_chart</span> Google Sheets
+      </button>
+      <span class="hidden md:block font-semibold text-sm text-blue-800">Lead Supervisor</span>
+      <div class="w-10 h-10 rounded-full bg-slate-200 border-2 border-primary overflow-hidden cursor-pointer" onclick="navigateTo('profile')">
+        <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAJvtmCSUz6V3jtAmlCaY8711tmjKv7iNKEnXQq2E3h6FTgKX-BAve7qRfaDfOpqK-LHWv0Sp5FEtQVjxMRdiBohCRXIy8unBgpGSci97jKjmpfRchAT1_q45gkkx6_csaatKwmbZlOaeU5AmFNUn6ihthHZXxL0XKf7PZD3HDE3Zn7cYySWyJg11ptiQAUMrmFKsGhg-CIMVJZjwD32ilYTdHV-1rVw3F5QWk7S0ykPmygBIJFfpeqizbAhgiwOUty6uE1gEbb_mQ"/>
+      </div>
+    </div>
+  </header>
+  <div class="flex min-h-screen pt-16 pb-20 md:pb-0">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="hidden md:flex h-[calc(100vh-4rem)] w-72 border-r border-slate-200 bg-white flex-col py-6 sticky top-16 shrink-0">
+      <nav class="flex flex-col h-full">
+        <div class="bg-blue-50 text-blue-800 rounded-lg mx-2 my-1 px-4 py-3 font-semibold flex items-center gap-3 cursor-pointer" onclick="navigateTo('dashboard')">
+          <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+          <span class="text-sm font-medium">Overview</span>
+        </div>
+        <div class="text-slate-600 mx-2 my-1 px-4 py-3 hover:bg-slate-100 transition-all flex items-center gap-3 cursor-pointer rounded-lg">
+          <span class="material-symbols-outlined">domain</span>
+          <span class="text-sm font-medium">School Directory</span>
+        </div>
+        <div class="text-slate-600 mx-2 my-1 px-4 py-3 hover:bg-slate-100 transition-all flex items-center gap-3 cursor-pointer rounded-lg">
+          <span class="material-symbols-outlined">history_edu</span>
+          <span class="text-sm font-medium">Observation Logs</span>
+        </div>
+        <div class="text-slate-600 mx-2 my-1 px-4 py-3 hover:bg-slate-100 transition-all flex items-center gap-3 cursor-pointer rounded-lg">
+          <span class="material-symbols-outlined">groups</span>
+          <span class="text-sm font-medium">Team Performance</span>
+        </div>
+        <div class="text-slate-600 mx-2 my-1 px-4 py-3 hover:bg-slate-100 transition-all flex items-center gap-3 cursor-pointer rounded-lg" onclick="navigateTo('settings')">
+          <span class="material-symbols-outlined">tune</span>
+          <span class="text-sm font-medium">System Settings</span>
+        </div>
+        <div class="mt-auto px-6 py-4 border-t border-slate-100">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center font-bold text-xs text-on-primary">LS</div>
+            <div>
+              <p class="text-xs font-bold text-on-surface">Lead Supervisor</p>
+              <p class="text-[10px] text-on-surface-variant">ID: 99283</p>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </aside>
+    <!-- Main -->
+    <main class="flex-1 overflow-x-hidden p-4 md:p-8 max-w-[1280px] mx-auto">
+      <div class="mb-8">
+        <h2 class="text-2xl font-bold text-primary mb-1">Dashboard</h2>
+        <p class="text-on-surface-variant text-sm">Welcome back. Here is your supervision overview for October 2023.</p>
+      </div>
+      <!-- Metrics -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+          <div class="flex justify-between items-start mb-4">
+            <div class="p-2 bg-blue-50 text-primary rounded-lg"><span class="material-symbols-outlined">assignment</span></div>
+            <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">+12%</span>
+          </div>
+          <p class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Total Supervisions</p>
+          <p class="text-2xl font-black text-on-surface" id="total-count">1,284</p>
+        </div>
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+          <div class="flex justify-between items-start mb-4">
+            <div class="p-2 bg-blue-50 text-primary rounded-lg"><span class="material-symbols-outlined">school</span></div>
+            <span class="text-xs font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded-full">Static</span>
+          </div>
+          <p class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Schools Visited</p>
+          <p class="text-2xl font-black text-on-surface">42</p>
+        </div>
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+          <div class="flex justify-between items-start mb-4">
+            <div class="p-2 bg-amber-50 text-amber-600 rounded-lg"><span class="material-symbols-outlined">pending_actions</span></div>
+            <span class="text-xs font-bold text-error bg-error-container px-2 py-1 rounded-full">Critical</span>
+          </div>
+          <p class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Pending Approval</p>
+          <p class="text-2xl font-black text-on-surface">18</p>
+        </div>
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+          <div class="flex justify-between items-start mb-4">
+            <div class="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><span class="material-symbols-outlined">check_circle</span></div>
+            <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">+5%</span>
+          </div>
+          <p class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Completed</p>
+          <p class="text-2xl font-black text-on-surface">1,266</p>
+        </div>
+      </div>
+      <!-- Main Layout -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="lg:col-span-2 space-y-8">
+          <!-- Chart -->
+          <section class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+            <div class="flex justify-between items-center mb-6">
+              <h3 class="font-bold text-slate-800">Monthly Supervision Activity</h3>
+              <select class="text-sm border-slate-200 rounded-lg focus:ring-primary focus:border-primary">
+                <option>Last 6 Months</option><option>Last Year</option>
+              </select>
+            </div>
+            <div class="h-64 bg-slate-50 rounded-lg border border-dashed border-slate-300 flex items-end justify-around p-4">
+              <div class="w-12 bg-primary/20 rounded-t-lg h-[40%] hover:bg-primary/40 relative group transition-all"><div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">45</div></div>
+              <div class="w-12 bg-primary/20 rounded-t-lg h-[65%] hover:bg-primary/40 relative group transition-all"><div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">72</div></div>
+              <div class="w-12 bg-primary/60 rounded-t-lg h-[55%] hover:bg-primary/80 relative group transition-all"><div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">60</div></div>
+              <div class="w-12 bg-primary/20 rounded-t-lg h-[85%] hover:bg-primary/40 relative group transition-all"><div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">94</div></div>
+              <div class="w-12 bg-primary/20 rounded-t-lg h-[45%] hover:bg-primary/40 relative group transition-all"><div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">50</div></div>
+              <div class="w-12 bg-primary rounded-t-lg h-[95%] hover:bg-primary relative group transition-all"><div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">108</div></div>
+            </div>
+            <div class="flex justify-around mt-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+              <span>May</span><span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span><span class="text-primary">Oct</span>
+            </div>
+          </section>
+          <!-- Reports Table -->
+          <section class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+              <h3 class="font-bold text-slate-800">Recent Supervision Reports</h3>
+              <button class="text-primary text-sm font-semibold hover:underline">View All</button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left">
+                <thead class="bg-slate-50 text-slate-500 text-xs font-bold uppercase tracking-wider">
+                  <tr>
+                    <th class="px-6 py-3">School Name</th>
+                    <th class="px-6 py-3">Date</th>
+                    <th class="px-6 py-3">Supervisor</th>
+                    <th class="px-6 py-3">Status</th>
+                    <th class="px-6 py-3 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="reports-table-body" class="divide-y divide-slate-100">
+                  <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="px-6 py-4"><p class="text-sm font-bold text-slate-800">Saint Mary Academy</p><p class="text-xs text-slate-500">ID: SCH-2023-01</p></td>
+                    <td class="px-6 py-4 text-sm text-slate-600">Oct 24, 2023</td>
+                    <td class="px-6 py-4"><div class="flex items-center gap-2"><div class="w-6 h-6 rounded-full bg-slate-200 overflow-hidden"><img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDLAR1DkLA6fWg8AjKIu65PJR-OQnZzIjdyUNxq1Y6uXPSMFnvItNDfIqGoynJ8Rq1KB5p5Ozw-wuzKIan-aXs1hekcUbQbPAc8vu2Y9Mo-PFk-H-dO9DhfUWKEzSDoUC1xTLrgAQKxp3eIcZgOS3bOuX-slwFMaIgT2-lnrdpvE-ytO3FxElt1sD97O0fYGGvXgf0o-xAkTyNgA4P74a13FNGY8ZXtyGsdBpeeKcbSU-r4JAaJwf3rXGFpTWdgookwbkuP2i_b6IE"/></div><span class="text-sm text-slate-700">Dr. Sarah J.</span></div></td>
+                    <td class="px-6 py-4"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">Approved</span></td>
+                    <td class="px-6 py-4 text-right"><button class="p-1 hover:bg-slate-200 rounded-lg text-slate-400"><span class="material-symbols-outlined text-lg">more_vert</span></button></td>
+                  </tr>
+                  <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="px-6 py-4"><p class="text-sm font-bold text-slate-800">Northern Technical High</p><p class="text-xs text-slate-500">ID: SCH-2023-45</p></td>
+                    <td class="px-6 py-4 text-sm text-slate-600">Oct 23, 2023</td>
+                    <td class="px-6 py-4"><div class="flex items-center gap-2"><div class="w-6 h-6 rounded-full bg-slate-200 overflow-hidden"><img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCBGgOlj6K4xth5Z16ky20gAfAECAJldfcJFbhzic6EMVlYJRp_bp_H-oZj9Znb2dBd3JLTUQtws9_utOYUnYOJTwFqPlz_cufun1Nkjo8gGWgICpvmnHlpTdBFawkh4-duNaDIAsqyuEhzNO6ZQeITpzdGNBqQ2dYeXzq31uCdwFwTd0YerOns-_erkpFRcAWMNhuZcByzdzvcZT_ZSDvnWGFtCJP5B9njEXjezuWf7snwUf4Rl5acFdTOPoq7eVGdaPfePHhc7FM"/></div><span class="text-sm text-slate-700">James Wilson</span></div></td>
+                    <td class="px-6 py-4"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">Pending</span></td>
+                    <td class="px-6 py-4 text-right"><button class="p-1 hover:bg-slate-200 rounded-lg text-slate-400"><span class="material-symbols-outlined text-lg">more_vert</span></button></td>
+                  </tr>
+                  <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="px-6 py-4"><p class="text-sm font-bold text-slate-800">Riverside Elementary</p><p class="text-xs text-slate-500">ID: SCH-2023-12</p></td>
+                    <td class="px-6 py-4 text-sm text-slate-600">Oct 22, 2023</td>
+                    <td class="px-6 py-4"><div class="flex items-center gap-2"><div class="w-6 h-6 rounded-full bg-slate-200 overflow-hidden"><img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDi0feRWsU5n16XRxA9W7gUz5Kv76nQ4Q2ARhSL-ibbO9-DsmaBFkqeF1IOJslsboJXPkIVjkSBiISuZPc1zqLS5TwVCGcpmSNr5xvcBsv0iXYanZZFnaVvrgp-ua4GxhkEoCSN3SdB-XZJ-UwC8GurvjU80EWYzSVMY_4qz_wMlMbn4Qyj6Qk2C5Kyq4hekZCb6PPEHfbeHFDVZ-u3vJRbLxvkbg1LmLnFM8wKBQU-nn-M8YBmJebJ4UHbcrBesnTrYp8gsJoo6bE"/></div><span class="text-sm text-slate-700">Maria Garcia</span></div></td>
+                    <td class="px-6 py-4"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Draft</span></td>
+                    <td class="px-6 py-4 text-right"><button class="p-1 hover:bg-slate-200 rounded-lg text-slate-400"><span class="material-symbols-outlined text-lg">more_vert</span></button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+        <!-- Right Sidebar -->
+        <div class="space-y-8">
+          <section>
+            <h3 class="font-bold text-slate-800 mb-4">Quick Menu</h3>
+            <div class="grid grid-cols-2 gap-3">
+              <button onclick="openReportModal()" class="flex flex-col items-center justify-center p-4 bg-primary text-white rounded-xl shadow-sm hover:bg-primary-container transition-all group">
+                <span class="material-symbols-outlined mb-2 group-hover:scale-110 transition-transform">add_circle</span>
+                <span class="text-[11px] font-bold">Add Report</span>
+              </button>
+              <button class="flex flex-col items-center justify-center p-4 bg-white border border-slate-200 text-primary rounded-xl shadow-sm hover:bg-slate-50 transition-all group">
+                <span class="material-symbols-outlined mb-2 group-hover:scale-110 transition-transform">history</span>
+                <span class="text-[11px] font-bold">History</span>
+              </button>
+              <button class="flex flex-col items-center justify-center p-4 bg-white border border-slate-200 text-primary rounded-xl shadow-sm hover:bg-slate-50 transition-all group">
+                <span class="material-symbols-outlined mb-2 group-hover:scale-110 transition-transform">picture_as_pdf</span>
+                <span class="text-[11px] font-bold">Export PDF</span>
+              </button>
+              <button onclick="openModal()" class="flex flex-col items-center justify-center p-4 bg-white border border-slate-200 text-primary rounded-xl shadow-sm hover:bg-slate-50 transition-all group">
+                <span class="material-symbols-outlined mb-2 group-hover:scale-110 transition-transform">table_chart</span>
+                <span class="text-[11px] font-bold">Sheets</span>
+              </button>
+            </div>
+            <button class="w-full mt-3 p-3 bg-secondary-container text-primary-container rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all">
+              <span class="material-symbols-outlined text-sm">analytics</span> Monthly Summary
+            </button>
+          </section>
+          <!-- Schedule -->
+          <section class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+            <div class="flex justify-between items-center mb-6">
+              <h3 class="font-bold text-slate-800">Schedule</h3>
+              <button class="material-symbols-outlined text-slate-400 hover:text-primary">calendar_month</button>
+            </div>
+            <div class="space-y-4">
+              <div class="flex gap-4 items-start relative pb-4 after:content-[''] after:absolute after:left-[11px] after:top-8 after:bottom-0 after:w-0.5 after:bg-slate-100">
+                <div class="z-10 w-6 h-6 rounded-full bg-primary flex items-center justify-center ring-4 ring-white"><span class="text-[10px] text-white font-bold">25</span></div>
+                <div class="flex-1"><p class="text-xs font-bold text-slate-800">Oakwood Preparatory</p><p class="text-[10px] text-slate-500">09:00 AM - Site Observation</p></div>
+              </div>
+              <div class="flex gap-4 items-start relative pb-4 after:content-[''] after:absolute after:left-[11px] after:top-8 after:bottom-0 after:w-0.5 after:bg-slate-100">
+                <div class="z-10 w-6 h-6 rounded-full bg-primary flex items-center justify-center ring-4 ring-white"><span class="text-[10px] text-white font-bold">26</span></div>
+                <div class="flex-1"><p class="text-xs font-bold text-slate-800">Valley View Academy</p><p class="text-[10px] text-slate-500">01:30 PM - Faculty Interview</p></div>
+              </div>
+              <div class="flex gap-4 items-start">
+                <div class="z-10 w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center ring-4 ring-white"><span class="text-[10px] text-slate-500 font-bold">28</span></div>
+                <div class="flex-1"><p class="text-xs font-bold text-slate-800">St. Jude's Secondary</p><p class="text-[10px] text-slate-500">10:00 AM - Progress Review</p></div>
+              </div>
+            </div>
+            <button class="w-full mt-6 py-2 border border-dashed border-slate-300 rounded-lg text-xs font-semibold text-slate-500 hover:bg-slate-50 transition-colors">+ Add Appointment</button>
+          </section>
+          <!-- Support -->
+          <div class="relative overflow-hidden rounded-xl bg-blue-800 p-6 text-white">
+            <div class="relative z-10">
+              <h4 class="font-bold mb-2">System Support</h4>
+              <p class="text-xs text-blue-100 mb-4 opacity-80 leading-relaxed">Need help with the supervision reports? Our support team is available 24/7.</p>
+              <button class="bg-white text-blue-800 px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-50 transition-colors">Contact Center</button>
+            </div>
+            <div class="absolute -right-4 -bottom-4 opacity-10">
+              <span class="material-symbols-outlined text-[100px]" style="font-variation-settings: 'FILL' 1;">support_agent</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  <!-- Bottom Nav -->
+  <nav class="md:hidden bg-white fixed bottom-0 left-0 w-full z-50 border-t border-slate-200 shadow-lg flex justify-around items-center h-16 px-2">
+    <div onclick="navigateTo('dashboard')" class="flex flex-col items-center justify-center bg-blue-50 text-blue-800 rounded-xl px-3 py-1 cursor-pointer">
+      <span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+      <span class="text-[10px] font-medium">Dashboard</span>
+    </div>
+    <div class="flex flex-col items-center justify-center text-slate-500 px-3 py-1 cursor-pointer">
+      <span class="material-symbols-outlined text-xl">school</span>
+      <span class="text-[10px] font-medium">Schools</span>
+    </div>
+    <div onclick="openReportModal()" class="flex flex-col items-center justify-center text-slate-500 px-3 py-1 cursor-pointer">
+      <span class="material-symbols-outlined text-xl">assignment</span>
+      <span class="text-[10px] font-medium">Reports</span>
+    </div>
+    <div onclick="navigateTo('settings')" class="flex flex-col items-center justify-center text-slate-500 px-3 py-1 cursor-pointer">
+      <span class="material-symbols-outlined text-xl">settings</span>
+      <span class="text-[10px] font-medium">Settings</span>
+    </div>
+  </nav>
+  <!-- FAB -->
+  <button onclick="openReportModal()" class="fixed bottom-20 right-6 md:bottom-8 md:right-8 w-14 h-14 bg-primary text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-40">
+    <span class="material-symbols-outlined text-3xl">add</span>
+  </button>
+</div>
+
+<!-- ===== PAGE: PROFILE ===== -->
+<div id="page-profile" class="page">
+  <header class="bg-white border-b border-slate-200 shadow-sm top-0 z-50 flex justify-between items-center w-full px-4 h-16 fixed">
+    <div class="flex items-center gap-3">
+      <button onclick="navigateTo('dashboard')" class="p-2 hover:bg-slate-50 transition-colors">
+        <span class="material-symbols-outlined text-blue-800">arrow_back</span>
+      </button>
+      <h1 class="text-xl font-bold text-blue-800">Supervision System</h1>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="text-right hidden sm:block">
+        <p class="text-sm font-semibold text-blue-800">ดร. สมชาย ใจดี</p>
+        <p class="text-[10px] text-slate-500">Supervisor ID: 99283</p>
+      </div>
+      <div class="w-10 h-10 rounded-full bg-primary-container overflow-hidden border-2 border-primary-container">
+        <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDp2KEhnvrnMABakp9m-4frUzWtaZRsHL1_9YZ5rDZ4otlBaoYnB4ZLYNuX2ss5YoiIkX-saiiG67RgP5RYeByVpvdlOTaDZkcOQC0YGhqNhX4EDU7IGFv6umsgUdhMFgtulstK-nYZcOr0p0uIymetboXXQuFgGluxzSASG567xgxXdXDaqclkJmHBb8ik8OSoDWb4loAo7xUBd8lwz_g7eoalMkLlgYIIcQ17iLD2p6R6MY9TxYuQbkSRlXcTm9gU3-DWHNEMGD0"/>
+      </div>
+    </div>
+  </header>
+  <main class="max-w-7xl mx-auto px-4 py-8 pt-24 md:flex md:gap-8 mb-20 md:mb-0">
+    <!-- Sidebar -->
+    <aside class="hidden md:block w-72 shrink-0">
+      <nav class="bg-white h-[calc(100vh-8rem)] rounded-xl shadow-xl border-r border-slate-200 flex flex-col py-6 sticky top-24">
+        <div class="px-6 mb-8"><h2 class="text-blue-800 font-black text-lg">Lead Supervisor</h2><p class="text-slate-500 text-xs">Educational Agency</p></div>
+        <div class="flex flex-col gap-1">
+          <div onclick="navigateTo('dashboard')" class="text-slate-600 mx-2 my-1 px-4 py-3 hover:bg-slate-100 transition-all flex items-center gap-3 cursor-pointer rounded-lg text-sm font-medium"><span class="material-symbols-outlined">home</span> Overview</div>
+          <div class="text-slate-600 mx-2 my-1 px-4 py-3 hover:bg-slate-100 transition-all flex items-center gap-3 cursor-pointer rounded-lg text-sm font-medium"><span class="material-symbols-outlined">domain</span> School Directory</div>
+          <div class="text-slate-600 mx-2 my-1 px-4 py-3 hover:bg-slate-100 transition-all flex items-center gap-3 cursor-pointer rounded-lg text-sm font-medium"><span class="material-symbols-outlined">history_edu</span> Observation Logs</div>
+          <div class="text-slate-600 mx-2 my-1 px-4 py-3 hover:bg-slate-100 transition-all flex items-center gap-3 cursor-pointer rounded-lg text-sm font-medium"><span class="material-symbols-outlined">groups</span> Team Performance</div>
+          <div onclick="navigateTo('settings')" class="bg-blue-50 text-blue-800 rounded-lg mx-2 my-1 px-4 py-3 font-semibold flex items-center gap-3 cursor-pointer text-sm"><span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">tune</span> System Settings</div>
+        </div>
+      </nav>
+    </aside>
+    <!-- Profile Content -->
+    <div class="flex-1 space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="md:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 p-8 flex flex-col md:flex-row gap-8 items-center md:items-start relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-blue-50 -mr-16 -mt-16 rounded-full opacity-50"></div>
+          <div class="w-32 h-32 rounded-2xl overflow-hidden shrink-0 border-4 border-blue-50 shadow-md z-10">
+            <img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCZ9T3_X1ne4XuVn195x0O21tH9ttt4lqWFg2KAi5ys5XvkLztTiVeMCMLG82lyu5SQzYf0f7K2mCeGDhHJdxDXUWSao7-f8mOKO3Te6F2QGqYuAGQ6_hHz1tcFzqmCmT7VRk8d8RCr702Q1fJ6PmLOSod33lqQi5nJGE9mEBGWlAtVIhwTsp6vkkbfjL8PO1G35gseW-5XibrhU_TLeH820TaZIX8pFu-9ukKkcES5T-jjiVc1mpoic9TnbufzsdQFKGRBo0jopus"/>
+          </div>
+          <div class="flex-1 text-center md:text-left z-10">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+              <div>
+                <h2 class="text-2xl font-bold text-slate-900">ดร. สมชาย ใจดี</h2>
+                <p class="text-primary font-semibold">ศึกษานิเทศก์ชำนาญการพิเศษ</p>
+              </div>
+              <button class="px-6 py-2.5 bg-primary text-white rounded-xl font-semibold text-sm hover:opacity-90 active:scale-95 transition-all shadow-md">แก้ไขข้อมูลส่วนตัว</button>
+            </div>
+            <div class="flex flex-wrap justify-center md:justify-start gap-4">
+              <span class="px-3 py-1 bg-surface-container rounded-full text-xs font-medium text-secondary flex items-center gap-1"><span class="material-symbols-outlined text-sm">verified_user</span> ยืนยันตัวตนแล้ว</span>
+              <span class="px-3 py-1 bg-surface-container rounded-full text-xs font-medium text-secondary flex items-center gap-1"><span class="material-symbols-outlined text-sm">calendar_today</span> ปฏิบัติงานมาแล้ว 12 ปี</span>
+            </div>
+          </div>
+        </div>
+        <div class="bg-primary-container text-white rounded-xl p-8 flex flex-col justify-between">
+          <div>
+            <p class="text-on-primary-container text-xs uppercase tracking-widest font-bold mb-1">ภาพรวมการประเมิน</p>
+            <h3 class="text-3xl font-black">124</h3>
+            <p class="text-sm opacity-80">รายงานการนิเทศปีนี้</p>
+          </div>
+          <div class="mt-6 pt-6 border-t border-white/20">
+            <div class="flex items-center justify-between mb-2"><span class="text-xs">ประสิทธิภาพเฉลี่ย</span><span class="text-xs font-bold">94%</span></div>
+            <div class="w-full bg-white/20 h-1.5 rounded-full overflow-hidden"><div class="bg-white h-full" style="width: 94%"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <div class="flex items-center gap-2 mb-6"><span class="material-symbols-outlined text-primary">contact_page</span><h3 class="font-bold text-slate-900">ข้อมูลการติดต่อ</h3></div>
+          <ul class="space-y-4">
+            <li class="flex items-start gap-4 p-3 rounded-lg hover:bg-slate-50 transition-colors"><span class="material-symbols-outlined text-secondary">domain</span><div><p class="text-xs text-slate-500 font-semibold uppercase">หน่วยงานต้นสังกัด</p><p class="text-sm text-slate-800">สำนักงานเขตพื้นที่การศึกษาประถมศึกษา (สพป.) เขต 1</p></div></li>
+            <li class="flex items-start gap-4 p-3 rounded-lg hover:bg-slate-50 transition-colors"><span class="material-symbols-outlined text-secondary">mail</span><div><p class="text-xs text-slate-500 font-semibold uppercase">อีเมล</p><p class="text-sm text-slate-800">somchai.jai@moe.go.th</p></div></li>
+            <li class="flex items-start gap-4 p-3 rounded-lg hover:bg-slate-50 transition-colors"><span class="material-symbols-outlined text-secondary">call</span><div><p class="text-xs text-slate-500 font-semibold uppercase">เบอร์โทรศัพท์</p><p class="text-sm text-slate-800">081-234-5678</p></div></li>
+          </ul>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center gap-2"><span class="material-symbols-outlined text-primary">history</span><h3 class="font-bold text-slate-900">ประวัติการนิเทศล่าสุด</h3></div>
+            <a class="text-xs font-bold text-primary hover:underline" href="#">ดูทั้งหมด</a>
+          </div>
+          <div class="space-y-3" id="profile-history">
+            <div class="flex items-center gap-4 p-3 border-b border-slate-100"><div class="w-10 h-10 rounded bg-blue-50 flex items-center justify-center text-primary"><span class="material-symbols-outlined">school</span></div><div class="flex-1"><h4 class="text-sm font-bold text-slate-800">โรงเรียนอนุบาลวัดท่าซุง</h4><p class="text-[10px] text-slate-500">20 ต.ค. 2566 • การสอนคณิตศาสตร์</p></div><span class="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded">สำเร็จ</span></div>
+            <div class="flex items-center gap-4 p-3 border-b border-slate-100"><div class="w-10 h-10 rounded bg-blue-50 flex items-center justify-center text-primary"><span class="material-symbols-outlined">school</span></div><div class="flex-1"><h4 class="text-sm font-bold text-slate-800">โรงเรียนเทศบาล 3</h4><p class="text-[10px] text-slate-500">18 ต.ค. 2566 • การใช้สื่อเทคโนโลยี</p></div><span class="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded">สำเร็จ</span></div>
+            <div class="flex items-center gap-4 p-3"><div class="w-10 h-10 rounded bg-blue-50 flex items-center justify-center text-primary"><span class="material-symbols-outlined">school</span></div><div class="flex-1"><h4 class="text-sm font-bold text-slate-800">โรงเรียนบ้านหนองบัว</h4><p class="text-[10px] text-slate-500">15 ต.ค. 2566 • ติดตามผลประเมินครู</p></div><span class="px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded">ร่าง</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <nav class="md:hidden fixed bottom-0 left-0 w-full z-50 border-t bg-white border-slate-200 shadow-lg h-16 px-2 flex justify-around items-center">
+    <div onclick="navigateTo('dashboard')" class="flex flex-col items-center justify-center text-slate-500 px-3 py-1 cursor-pointer"><span class="material-symbols-outlined">dashboard</span><span class="text-[10px] font-medium">Dashboard</span></div>
+    <div class="flex flex-col items-center justify-center text-slate-500 px-3 py-1"><span class="material-symbols-outlined">school</span><span class="text-[10px] font-medium">Schools</span></div>
+    <div class="flex flex-col items-center justify-center text-slate-500 px-3 py-1"><span class="material-symbols-outlined">assignment</span><span class="text-[10px] font-medium">Reports</span></div>
+    <div onclick="navigateTo('settings')" class="flex flex-col items-center justify-center bg-blue-50 text-blue-800 rounded-xl px-3 py-1 cursor-pointer"><span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">settings</span><span class="text-[10px] font-medium">Settings</span></div>
+  </nav>
+</div>
+
+<!-- ===== PAGE: SETTINGS ===== -->
+<div id="page-settings" class="page">
+  <header class="bg-white border-b border-slate-200 shadow-sm top-0 z-50 fixed flex justify-between items-center w-full px-4 h-16">
+    <div class="flex items-center gap-3">
+      <button onclick="navigateTo('dashboard')" class="p-2 hover:bg-slate-50 transition-colors">
+        <span class="material-symbols-outlined text-slate-500">menu</span>
+      </button>
+      <h1 class="text-xl font-bold text-blue-800 tracking-tight">Supervision System</h1>
+    </div>
+    <div class="flex items-center">
+      <img class="w-8 h-8 rounded-full border border-slate-200" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDopC04SIVu9iQDeJHdt3bOA7lVwCUnItKIMWwX2pdCDZt9_f_3ar1l5dYWDf0YCJuCw-m5rp42r9b7deR78gdya1qt6jZUGNKwA4w7hUeqQMfHeihvPC6S4F1BCyxb7knYMqPo8XsT6-_xAl5p23l2qM936DUrjqkHNc78M1YvoyRNHEcsQ9erAEctjtpaEcjwzn3WZZEtbkTUu3SNOSXfP_IFTtKqz5VIc8_g7NDCx1al-vbx_H5-QpoibWjH-YnljqVtM6bB4uc"/>
+    </div>
+  </header>
+  <main class="pt-20 pb-24 max-w-lg mx-auto px-4">
+    <section class="mb-8 flex flex-col items-center text-center">
+      <div class="relative mb-3">
+        <img class="w-20 h-20 rounded-full border-4 border-white shadow-md" src="https://lh3.googleusercontent.com/aida-public/AB6AXuClYDob_OSDy37D2UGWTH0aGAbzVfxB0kaG22zq9JZOahcYYtEhrXwBWUSxmTRYdFUMmmGdYbdDo7vRXCG8wfPp9R0nRknzxFmk-83PkDYmK17Ho7ybp-VUKM7lz4sQBv4RqxXBJORxm32is-aJj76Ry9WA-BDOk8PYMK_-ds9d3zjIWlV02M5jBl7p_riPNcCkFoSi4xqtvzF8yNv2LEPhQaL8iu1XBNrMtJNjCuXacpAOHQs7Da7usBXFSZIzQgSCudi6OcdnMRo"/>
+        <div class="absolute bottom-0 right-0 bg-primary p-1.5 rounded-full text-white border-2 border-white"><span class="material-symbols-outlined text-xs">edit</span></div>
+      </div>
+      <h2 class="text-xl font-bold text-on-background">Lead Supervisor</h2>
+      <p class="text-sm text-on-surface-variant">Educational Agency • ID: 99283</p>
+    </section>
+    <div class="space-y-6">
+      <!-- Account -->
+      <div>
+        <h3 class="text-xs font-semibold text-primary uppercase tracking-wider mb-3 px-1">Account</h3>
+        <div class="bg-surface-container-lowest border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+          <button class="w-full flex items-center justify-between p-4 hover:bg-slate-50 active:bg-slate-100 transition-colors">
+            <div class="flex items-center gap-4"><span class="material-symbols-outlined text-slate-500">lock</span><span class="text-sm font-medium">Change Password</span></div>
+            <span class="material-symbols-outlined text-slate-400">chevron_right</span>
+          </button>
+        </div>
+      </div>
+      <!-- Google Sheets Integration -->
+      <div>
+        <h3 class="text-xs font-semibold text-primary uppercase tracking-wider mb-3 px-1">การเชื่อมต่อข้อมูล</h3>
+        <div class="bg-surface-container-lowest border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+          <button onclick="openModal()" class="w-full flex items-center justify-between p-4 hover:bg-slate-50 active:bg-slate-100 transition-colors">
+            <div class="flex items-center gap-4"><span class="material-symbols-outlined text-slate-500">table_chart</span><div class="text-left"><span class="text-sm font-medium block">Google Sheets Integration</span><span class="text-[11px] text-slate-400" id="sheets-status-text">ยังไม่ได้เชื่อมต่อ</span></div></div>
+            <span class="material-symbols-outlined text-slate-400">chevron_right</span>
+          </button>
+        </div>
+      </div>
+      <!-- Notifications -->
+      <div>
+        <h3 class="text-xs font-semibold text-primary uppercase tracking-wider mb-3 px-1">Notifications</h3>
+        <div class="bg-surface-container-lowest border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+          <div class="flex items-center justify-between p-4 border-b border-slate-100">
+            <div class="flex items-center gap-4"><span class="material-symbols-outlined text-slate-500">notifications</span><span class="text-sm font-medium">System notifications toggle</span></div>
+            <label class="relative inline-flex items-center cursor-pointer"><input checked class="sr-only peer" type="checkbox"/><div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div></label>
+          </div>
+          <div class="flex items-center justify-between p-4">
+            <div class="flex items-center gap-4"><span class="material-symbols-outlined text-slate-500">mail</span><span class="text-sm font-medium">Email notifications toggle</span></div>
+            <label class="relative inline-flex items-center cursor-pointer"><input class="sr-only peer" type="checkbox"/><div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div></label>
+          </div>
+        </div>
+      </div>
+      <!-- Appearance -->
+      <div>
+        <h3 class="text-xs font-semibold text-primary uppercase tracking-wider mb-3 px-1">Appearance</h3>
+        <div class="bg-surface-container-lowest border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+          <button class="w-full flex items-center justify-between p-4 border-b border-slate-100 hover:bg-slate-50 transition-colors">
+            <div class="flex items-center gap-4"><span class="material-symbols-outlined text-slate-500">language</span><span class="text-sm font-medium">Language (ไทย/English)</span></div>
+            <span class="text-xs font-medium text-slate-400 flex items-center gap-1">English <span class="material-symbols-outlined text-sm">expand_more</span></span>
+          </button>
+          <button class="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors">
+            <div class="flex items-center gap-4"><span class="material-symbols-outlined text-slate-500">palette</span><span class="text-sm font-medium">Theme (Light/Dark mode)</span></div>
+            <div class="bg-slate-100 p-1 rounded-lg flex gap-1"><div class="bg-white px-2 py-1 rounded shadow-sm text-[10px] font-bold text-primary">Light</div><div class="px-2 py-1 rounded text-[10px] font-medium text-slate-500">Dark</div></div>
+          </button>
+        </div>
+      </div>
+      <!-- Admin -->
+      <div>
+        <h3 class="text-xs font-semibold text-primary uppercase tracking-wider mb-3 px-1">Admin</h3>
+        <div class="bg-surface-container-lowest border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+          <button class="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors">
+            <div class="flex items-center gap-4"><span class="material-symbols-outlined text-slate-500">admin_panel_settings</span><span class="text-sm font-medium">User permission management</span></div>
+            <span class="material-symbols-outlined text-slate-400">chevron_right</span>
+          </button>
+        </div>
+      </div>
+      <!-- Logout -->
+      <div class="pt-4">
+        <button onclick="handleLogout()" class="w-full py-4 bg-error-container text-on-error-container font-semibold rounded-xl active:scale-[0.98] transition-transform flex items-center justify-center gap-2">
+          <span class="material-symbols-outlined">logout</span> ออกจากระบบ
+        </button>
+      </div>
+      <div class="text-center py-6">
+        <p class="text-[10px] text-slate-400 font-medium tracking-widest uppercase">Supervision Report System v2.4.0</p>
+      </div>
+    </div>
+  </main>
+  <nav class="bg-white fixed bottom-0 left-0 w-full z-50 border-t border-slate-200 shadow-lg flex justify-around items-center h-16 px-2">
+    <div onclick="navigateTo('dashboard')" class="flex flex-col items-center justify-center text-slate-500 px-3 py-1 cursor-pointer hover:text-blue-700 active:scale-95 transition-all"><span class="material-symbols-outlined">dashboard</span><span class="text-[10px] font-medium">Dashboard</span></div>
+    <div class="flex flex-col items-center justify-center text-slate-500 px-3 py-1 cursor-pointer hover:text-blue-700 active:scale-95 transition-all"><span class="material-symbols-outlined">school</span><span class="text-[10px] font-medium">Schools</span></div>
+    <div class="flex flex-col items-center justify-center text-slate-500 px-3 py-1 cursor-pointer hover:text-blue-700 active:scale-95 transition-all"><span class="material-symbols-outlined">assignment</span><span class="text-[10px] font-medium">Reports</span></div>
+    <div class="flex flex-col items-center justify-center bg-blue-50 text-blue-800 rounded-xl px-3 py-1 active:scale-95 transition-all cursor-pointer"><span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">settings</span><span class="text-[10px] font-bold">Settings</span></div>
+  </nav>
+</div>
+
+<!-- ===== JAVASCRIPT ===== -->
+<script>
+/*
+ * ============================================================
+ * GOOGLE APPS SCRIPT CODE (วางใน Apps Script Editor)
+ * ============================================================
+ * function doPost(e) {
+ *   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+ *   var data = JSON.parse(e.postData.contents);
+ *   
+ *   // สร้าง Header ถ้ายังไม่มี
+ *   if (sheet.getLastRow() === 0) {
+ *     sheet.appendRow(['Timestamp','School','Date','Supervisor','Topic','Status','Score','Note']);
+ *   }
+ *   
+ *   sheet.appendRow([
+ *     new Date().toLocaleString('th-TH'),
+ *     data.school,
+ *     data.date,
+ *     data.supervisor,
+ *     data.topic,
+ *     data.status,
+ *     data.score,
+ *     data.note
+ *   ]);
+ *   
+ *   return ContentService
+ *     .createTextOutput(JSON.stringify({success: true}))
+ *     .setMimeType(ContentService.MimeType.JSON);
+ * }
+ * ============================================================
+ */
+
+// ---- State ----
+let currentPage = 'login';
+let sheetsUrl = localStorage.getItem('sheetsUrl') || '';
+let localReports = JSON.parse(localStorage.getItem('localReports') || '[]');
+
+// ---- Navigation ----
+function navigateTo(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  currentPage = page;
+  window.scrollTo(0, 0);
+}
+
+// ---- Login ----
+function handleLogin(e) {
+  e.preventDefault();
+  const btn = document.getElementById('login-btn');
+  btn.innerHTML = '<span class="spinner"></span> กำลังเข้าสู่ระบบ...';
+  btn.disabled = true;
+  setTimeout(() => {
+    navigateTo('dashboard');
+    showToast('เข้าสู่ระบบสำเร็จ ยินดีต้อนรับ!');
+    btn.innerHTML = '<span>เข้าสู่ระบบ</span><span class="material-symbols-outlined text-xl">login</span>';
+    btn.disabled = false;
+  }, 1200);
+}
+
+function handleLogout() {
+  navigateTo('login');
+  showToast('ออกจากระบบแล้ว');
+}
+
+function togglePassword() {
+  const pw = document.getElementById('password');
+  const icon = document.getElementById('pw-icon');
+  if (pw.type === 'password') { pw.type = 'text'; icon.textContent = 'visibility_off'; }
+  else { pw.type = 'password'; icon.textContent = 'visibility'; }
+}
+
+// ---- Google Sheets Modal ----
+function openModal() {
+  document.getElementById('modal-overlay').classList.add('open');
+  document.getElementById('sheets-url-input').value = sheetsUrl;
+}
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+function saveSheetUrl() {
+  const url = document.getElementById('sheets-url-input').value.trim();
+  if (url && !url.startsWith('https://script.google.com')) {
+    showToast('URL ไม่ถูกต้อง กรุณาใช้ Google Apps Script URL');
+    return;
+  }
+  sheetsUrl = url;
+  localStorage.setItem('sheetsUrl', url);
+  updateSheetsStatus();
+  closeModal();
+  showToast(url ? 'เชื่อมต่อ Google Sheets สำเร็จ ✓' : 'ลบ URL แล้ว');
+}
+function updateSheetsStatus() {
+  const el = document.getElementById('sheets-status-text');
+  if (el) el.textContent = sheetsUrl ? 'เชื่อมต่อแล้ว: ' + sheetsUrl.substring(0,40) + '...' : 'ยังไม่ได้เชื่อมต่อ';
+}
+
+// ---- Report Modal ----
+function openReportModal() {
+  const overlay = document.getElementById('report-modal-overlay');
+  overlay.style.display = 'flex';
+  // Set today as default date
+  document.getElementById('field-date').value = new Date().toISOString().split('T')[0];
+  // Show warning if no sheets URL
+  const warn = document.getElementById('sheets-warning');
+  if (!sheetsUrl) warn.classList.remove('hidden');
+  else warn.classList.add('hidden');
+}
+function closeReportModal() {
+  document.getElementById('report-modal-overlay').style.display = 'none';
+  document.getElementById('report-form').reset();
+}
+
+// ---- Submit Report ----
+document.getElementById('report-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById('submit-btn');
+  btn.innerHTML = '<span class="spinner"></span> กำลังบันทึก...';
+  btn.disabled = true;
+
+  const report = {
+    school: document.getElementById('field-school').value,
+    date: document.getElementById('field-date').value,
+    supervisor: document.getElementById('field-supervisor').value,
+    topic: document.getElementById('field-topic').value,
+    status: document.getElementById('field-status').value,
+    score: document.getElementById('field-score').value,
+    note: document.getElementById('field-note').value,
+    timestamp: new Date().toISOString()
+  };
+
+  // Save locally
+  localReports.unshift(report);
+  localStorage.setItem('localReports', JSON.stringify(localReports));
+  addReportToTable(report);
+
+  // Send to Google Sheets
+  if (sheetsUrl) {
+    try {
+      await fetch(sheetsUrl, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(report)
+      });
+      showToast('บันทึกลง Google Sheets สำเร็จ ✓');
+    } catch (err) {
+      showToast('บันทึกในเครื่องแล้ว (ส่ง Sheets ไม่สำเร็จ)');
+    }
+  } else {
+    showToast('บันทึกในเครื่องสำเร็จ (ยังไม่ได้เชื่อมต่อ Sheets)');
+  }
+
+  btn.innerHTML = '<span class="material-symbols-outlined text-sm">save</span> บันทึกรายงาน';
+  btn.disabled = false;
+  closeReportModal();
+});
+
+// ---- Add Report Row to Table ----
+function addReportToTable(report) {
+  const tbody = document.getElementById('reports-table-body');
+  const statusColor = report.status === 'สำเร็จ' ? 'bg-emerald-100 text-emerald-800' :
+                      report.status === 'รอการอนุมัติ' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800';
+  const tr = document.createElement('tr');
+  tr.className = 'hover:bg-slate-50 transition-colors';
+  tr.innerHTML = `
+    <td class="px-6 py-4"><p class="text-sm font-bold text-slate-800">${report.school}</p><p class="text-xs text-slate-500">${report.topic}</p></td>
+    <td class="px-6 py-4 text-sm text-slate-600">${formatDate(report.date)}</td>
+    <td class="px-6 py-4"><span class="text-sm text-slate-700">${report.supervisor}</span></td>
+    <td class="px-6 py-4"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor}">${report.status}</span></td>
+    <td class="px-6 py-4 text-right"><button class="p-1 hover:bg-slate-200 rounded-lg text-slate-400"><span class="material-symbols-outlined text-lg">more_vert</span></button></td>
+  `;
+  tbody.insertBefore(tr, tbody.firstChild);
+}
+
+function formatDate(dateStr) {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+// ---- Toast ----
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// ---- Sidebar toggle (mobile) ----
+function toggleSidebar() {
+  // For future mobile drawer implementation
+}
+
+// ---- Close modals on overlay click ----
+document.getElementById('modal-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+document.getElementById('report-modal-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeReportModal();
+});
+
+// ---- Init ----
+updateSheetsStatus();
+// Load saved reports into table on start
+localReports.slice(0, 5).forEach(r => addReportToTable(r));
+</script>
+</body>
+</html>
