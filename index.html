@@ -750,30 +750,69 @@ tailwind.config = {darkMode: "class", theme: {extend: {colors: {surface: "#faf5e
 let currentPage = 'login';
 let sheetsUrl = localStorage.getItem('sheetsUrl') || '';
 let localReports = JSON.parse(localStorage.getItem('localReports') || '[]');
+let loginState = JSON.parse(localStorage.getItem('loginState') || '{"isLoggedIn": false, "rememberMe": false}');
 
 // ---- Navigation ----
 function navigateTo(page) {
+  // ตรวจสอบการล็อกอินก่อนเข้าถึงหน้าอื่น
+  if (page !== 'login' && !loginState.isLoggedIn) {
+    page = 'login';
+    showToast('กรุณาเข้าสู่ระบบก่อนใช้งาน');
+  }
+  
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById('page-' + page).classList.add('active');
-  currentPage = page;
-  window.scrollTo(0, 0);
+  const targetPage = document.getElementById('page-' + page);
+  if (targetPage) {
+    targetPage.classList.add('active');
+    currentPage = page;
+    window.scrollTo(0, 0);
+  }
 }
 
 // ---- Login ----
 function handleLogin(e) {
   e.preventDefault();
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value.trim();
+  const rememberMe = document.getElementById('remember').checked;
+  
+  if (!username || !password) {
+    showToast('กรุณากรอกชื่อผู้ใช้งานและรหัสผ่าน');
+    return;
+  }
+  
   const btn = document.getElementById('login-btn');
   btn.innerHTML = '<span class="spinner"></span> กำลังเข้าสู่ระบบ...';
   btn.disabled = true;
+  
   setTimeout(() => {
-    navigateTo('dashboard');
-    showToast('เข้าสู่ระบบสำเร็จ ยินดีต้อนรับ!');
+    // ตรวจสอบการล็อกอิน (ตัวอย่าง: admin/admin)
+    if (username === 'admin' && password === 'admin') {
+      loginState.isLoggedIn = true;
+      loginState.rememberMe = rememberMe;
+      localStorage.setItem('loginState', JSON.stringify(loginState));
+      
+      if (rememberMe) {
+        localStorage.setItem('savedUsername', username);
+      } else {
+        localStorage.removeItem('savedUsername');
+      }
+      
+      navigateTo('dashboard');
+      showToast('เข้าสู่ระบบสำเร็จ ยินดีต้อนรับ!');
+    } else {
+      showToast('ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง');
+    }
+    
     btn.innerHTML = '<span>เข้าสู่ระบบ</span><span class="material-symbols-outlined text-xl">login</span>';
     btn.disabled = false;
   }, 1200);
 }
 
 function handleLogout() {
+  loginState.isLoggedIn = false;
+  loginState.rememberMe = false;
+  localStorage.setItem('loginState', JSON.stringify(loginState));
   navigateTo('login');
   showToast('ออกจากระบบแล้ว');
 }
@@ -839,7 +878,7 @@ document.getElementById('report-form').addEventListener('submit', async function
     supervisor: document.getElementById('field-supervisor').value,
     topic: document.getElementById('field-topic').value,
     status: document.getElementById('field-status').value,
-    score: document.getElementById('field-score').value,
+    score: document.getElementById('field-score').value || '0',
     note: document.getElementById('field-note').value,
     timestamp: new Date().toISOString()
   };
@@ -848,6 +887,8 @@ document.getElementById('report-form').addEventListener('submit', async function
   localReports.unshift(report);
   localStorage.setItem('localReports', JSON.stringify(localReports));
   addReportToTable(report);
+  updateDashboardMetrics();
+  updateProfileHistory(report);
 
   // Send to Google Sheets
   if (sheetsUrl) {
@@ -874,6 +915,8 @@ document.getElementById('report-form').addEventListener('submit', async function
 // ---- Add Report Row to Table ----
 function addReportToTable(report) {
   const tbody = document.getElementById('reports-table-body');
+  if (!tbody) return;
+  
   const statusColor = report.status === 'สำเร็จ' ? 'bg-emerald-100 text-emerald-800' :
                       report.status === 'รอการอนุมัติ' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800';
   const tr = document.createElement('tr');
@@ -886,6 +929,39 @@ function addReportToTable(report) {
     <td class="px-6 py-4 text-right"><button class="p-1 hover:bg-slate-200 rounded-lg text-slate-400"><span class="material-symbols-outlined text-lg">more_vert</span></button></td>
   `;
   tbody.insertBefore(tr, tbody.firstChild);
+}
+
+// ---- Update Dashboard Metrics ----
+function updateDashboardMetrics() {
+  const totalCount = document.getElementById('total-count');
+  if (totalCount) {
+    const currentTotal = parseInt(totalCount.textContent.replace(',', '')) + 1;
+    totalCount.textContent = currentTotal.toLocaleString();
+  }
+}
+
+// ---- Update Profile History ----
+function updateProfileHistory(report) {
+  const profileHistory = document.getElementById('profile-history');
+  if (!profileHistory) return;
+  
+  const statusClass = report.status === 'สำเร็จ' ? 'bg-green-100 text-green-700' :
+                      report.status === 'รอการอนุมัติ' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700';
+  
+  const newEntry = document.createElement('div');
+  newEntry.className = 'flex items-center gap-4 p-3 border-b border-slate-100';
+  newEntry.innerHTML = `
+    <div class="w-10 h-10 rounded bg-blue-50 flex items-center justify-center text-primary">
+      <span class="material-symbols-outlined">school</span>
+    </div>
+    <div class="flex-1">
+      <h4 class="text-sm font-bold text-slate-800">${report.school}</h4>
+      <p class="text-[10px] text-slate-500">${formatDate(report.date)} • ${report.topic}</p>
+    </div>
+    <span class="px-2 py-0.5 ${statusClass} text-[10px] font-bold rounded">${report.status}</span>
+  `;
+  
+  profileHistory.insertBefore(newEntry, profileHistory.firstChild);
 }
 
 function formatDate(dateStr) {
@@ -903,7 +979,10 @@ function showToast(msg) {
 
 // ---- Sidebar toggle (mobile) ----
 function toggleSidebar() {
-  // For future mobile drawer implementation
+  const sidebar = document.getElementById('sidebar');
+  if (sidebar) {
+    sidebar.classList.toggle('hidden');
+  }
 }
 
 // ---- Close modals on overlay click ----
@@ -914,10 +993,28 @@ document.getElementById('report-modal-overlay').addEventListener('click', functi
   if (e.target === this) closeReportModal();
 });
 
-// ---- Init ----
-updateSheetsStatus();
-// Load saved reports into table on start
-localReports.slice(0, 5).forEach(r => addReportToTable(r));
+// ---- Initialize Application ----
+function initApp() {
+  updateSheetsStatus();
+  
+  // โหลดรายงานที่บันทึกไว้ในตาราง
+  localReports.slice(0, 5).forEach(r => addReportToTable(r));
+  
+  // ตรวจสอบสถานะการล็อกอิน
+  if (loginState.isLoggedIn) {
+    navigateTo('dashboard');
+  }
+  
+  // โหลดชื่อผู้ใช้ที่บันทึกไว้
+  const savedUsername = localStorage.getItem('savedUsername');
+  if (savedUsername && document.getElementById('username')) {
+    document.getElementById('username').value = savedUsername;
+    document.getElementById('remember').checked = true;
+  }
+}
+
+// เริ่มต้นแอปพลิเคชันเมื่อโหลดหน้าเว็บ
+document.addEventListener('DOMContentLoaded', initApp);
 </script>
 </body>
 </html>
